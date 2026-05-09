@@ -87,6 +87,20 @@
         .about-content h2 { font-size: 1.5rem; color: #e07a94; font-style: italic; margin-bottom: 6px; }
         .about-content p { color: #999; font-size: 0.85rem; line-height: 1.6; }
         .about-content .version { margin-top: 15px; font-size: 0.75rem; color: #ccc; }
+        .streak-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-radius: 20px; padding: 6px 14px; margin-top: 8px; font-size: 0.8rem; color: #e65100; font-weight: 600; animation: badgePulse 2s infinite; }
+        @keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,152,0,0.3); } 50% { box-shadow: 0 0 0 6px rgba(255,152,0,0); } }
+        .motivational { text-align: center; margin-top: 10px; font-size: 0.8rem; color: #c9886e; font-style: italic; min-height: 20px; transition: opacity 0.5s; }
+        .achievement-toast { position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #ffd700, #ffb300); color: #5d4037; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 4px 20px rgba(255,193,7,0.4); z-index: 2000; animation: toastIn 0.5s cubic-bezier(0.34,1.56,0.64,1), toastOut 0.5s 2.5s forwards; }
+        @keyframes toastIn { 0% { transform: translateY(30px) scale(0.8); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes toastOut { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(20px); } }
+        .cat-mood { text-align: center; font-size: 0.75rem; color: #bbb; margin-top: 4px; }
+        .confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1500; }
+        .daily-stats { display: flex; gap: 12px; justify-content: center; margin-top: 12px; }
+        .stat-card { background: #fff; border-radius: 10px; padding: 10px 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); min-width: 80px; }
+        .stat-num { font-size: 1.3rem; font-weight: 700; color: #e88ca5; }
+        .stat-label { font-size: 0.65rem; color: #bbb; margin-top: 2px; }
+        .kbd-hint { text-align: center; margin-top: 8px; font-size: 0.7rem; color: #ccc; }
+        .kbd { background: #f0ebe9; border: 1px solid #ddd; border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 0.7rem; }
         .history-empty { text-align: center; padding: 40px 0; color: #ccc; }
         .history-empty .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
         .history-list { list-style: none; }
@@ -132,6 +146,14 @@
                     <button class="btn btn-secondary" id="btnStop" disabled>&#9632; Стоп</button>
                 </div>
                 <div class="cycle-count" id="cycleCount"></div>
+                <div class="cat-mood" id="catMood"></div>
+                <div class="daily-stats">
+                    <div class="stat-card"><div class="stat-num" id="statCycles">0</div><div class="stat-label">циклов</div></div>
+                    <div class="stat-card"><div class="stat-num" id="statMins">0</div><div class="stat-label">мин работы</div></div>
+                    <div class="stat-card"><div class="stat-num" id="statStreak">0</div><div class="stat-label">серия</div></div>
+                </div>
+                <div class="motivational" id="motivational"></div>
+                <div class="kbd-hint"><kbd class="kbd">Space</kbd> старт/стоп &bull; <kbd class="kbd">Esc</kbd> сброс</div>
             </div>
         </div>
         <div class="page" id="page-settings">
@@ -188,20 +210,29 @@
             <button class="btn-skip" id="btnSkip">&#128170; Вернуться к работе</button>
         </div>
     </div>
+    <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
     <script>
         var D=function(id){return document.getElementById(id)};
         var CIRC=2*Math.PI*90;D('ringFill').style.strokeDasharray=CIRC;
-        var timer=null,remaining=0,total=0,isWork=false,isRest=false,cycles=0,historyData=[];
+        var timer=null,remaining=0,total=0,isWork=false,isRest=false,cycles=0,historyData=[],streak=0,totalWorkMins=0;
         var catPhrases=['Мяу! Пора отдохнуть!','Мррр~ Отдохни немного!','Эй! Глазки устали!','Потянись как котик!','Время для перерыва!','Котик говорит: отдых!','Муррр, сделай паузу!','Мяу! Хватит работать!'];
+        var motivationals=['Ты молодец, продолжай!','Фокус — это суперсила!','Котик верит в тебя!','Каждая минута приближает к цели!','Ты справишься, мяу!','Отличная работа, так держать!','Концентрация — ключ к успеху!','Мяу-мотивация: ты лучший!'];
+        var catMoods=['😺 Котик доволен','😸 Котик рад тебя видеть','😻 Котик в восторге!','🙀 Котик поражён твоей продуктивностью!','😽 Котик гордится тобой!'];
+        var achievements={3:'🏅 Три подряд! Молодец!',5:'🎖️ Пять циклов! Котик гордится!',10:'🏆 Десять! Ты машина!',25:'👑 Легенда продуктивности!'};
+        function showMotivational(){var m=motivationals[Math.floor(Math.random()*motivationals.length)];var el=D('motivational');el.style.opacity=0;setTimeout(function(){el.textContent=m;el.style.opacity=1},300)}
+        function updateCatMood(){var idx=Math.min(Math.floor(cycles/2),catMoods.length-1);D('catMood').textContent=catMoods[idx]}
+        function updateStats(){D('statCycles').textContent=cycles;D('statMins').textContent=totalWorkMins;D('statStreak').textContent=streak}
+        function showAchievement(text){var t=document.createElement('div');t.className='achievement-toast';t.textContent=text;document.body.appendChild(t);setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t)},3200)}
+        function confetti(){var c=D('confettiCanvas'),ctx=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;var particles=[];var colors=['#e88ca5','#f0a3b8','#7ecba1','#ffd700','#ff6b6b','#64b5f6','#ba68c8'];for(var i=0;i<80;i++)particles.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*12,vy:Math.random()*-14-4,size:Math.random()*6+3,color:colors[Math.floor(Math.random()*colors.length)],rotation:Math.random()*360,rotSpeed:(Math.random()-0.5)*10,life:1});var frame=0;function draw(){ctx.clearRect(0,0,c.width,c.height);var alive=false;particles.forEach(function(p){if(p.life<=0)return;alive=true;p.x+=p.vx;p.y+=p.vy;p.vy+=0.35;p.rotation+=p.rotSpeed;p.life-=0.012;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rotation*Math.PI/180);ctx.fillStyle=p.color;ctx.globalAlpha=p.life;ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);ctx.restore()});if(alive&&frame<180){frame++;requestAnimationFrame(draw)}else{ctx.clearRect(0,0,c.width,c.height)}}draw()}
         function fmt(s){var m=Math.floor(s/60);var ss=s%60;return m+':'+String(ss).padStart(2,'0')}
         function updateRing(r,t){D('ringFill').style.strokeDashoffset=CIRC*(1-r/t)}
         function beep(){if(!D('soundOn').checked)return;var v=parseInt(D('volumeSlider').value)/100;try{var c=new(window.AudioContext||window.webkitAudioContext)();var g=c.createGain();g.connect(c.destination);g.gain.setValueAtTime(0.3*v,c.currentTime);g.gain.exponentialRampToValueAtTime(0.01,c.currentTime+0.4);var o=c.createOscillator();o.connect(g);o.frequency.value=800;o.type='sine';o.start();o.stop(c.currentTime+0.4);setTimeout(function(){var g2=c.createGain();g2.connect(c.destination);g2.gain.setValueAtTime(0.3*v,c.currentTime);g2.gain.exponentialRampToValueAtTime(0.01,c.currentTime+0.4);var o2=c.createOscillator();o2.connect(g2);o2.frequency.value=1000;o2.type='sine';o2.start();o2.stop(c.currentTime+0.4)},180)}catch(e){}}
-        function startWork(){var m=parseInt(D('workMin').value)||25;remaining=m*60;total=remaining;isWork=true;isRest=false;D('ringFill').classList.remove('rest-ring');D('btnStart').disabled=true;D('btnStop').disabled=false;D('timerStatus').textContent='💻 Работа';D('timerStatus').className='timer-status working';render();timer=setInterval(tick,1000)}
-        function tick(){remaining--;render();if(remaining<=0){clearInterval(timer);timer=null;if(isWork){cycles++;addHistory('Рабочая сессия',parseInt(D('workMin').value)||25);D('cycleCount').textContent='Завершено циклов: '+cycles;beep();startRest()}else if(isRest){addHistory('Отдых',parseInt(D('restMin').value)||5);endRest();beep();if(D('autoStart').checked){startWork()}else{stopAll()}}}}
+        function startWork(){var m=parseInt(D('workMin').value)||25;remaining=m*60;total=remaining;isWork=true;isRest=false;D('ringFill').classList.remove('rest-ring');D('btnStart').disabled=true;D('btnStop').disabled=false;D('timerStatus').textContent='💻 Работа';D('timerStatus').className='timer-status working';showMotivational();render();timer=setInterval(tick,1000)}
+        function tick(){remaining--;render();if(remaining<=0){clearInterval(timer);timer=null;if(isWork){cycles++;streak++;totalWorkMins+=parseInt(D('workMin').value)||25;addHistory('Рабочая сессия',parseInt(D('workMin').value)||25);D('cycleCount').textContent='Завершено циклов: '+cycles;updateStats();updateCatMood();if(achievements[cycles])showAchievement(achievements[cycles]);if(cycles%5===0)confetti();beep();startRest()}else if(isRest){addHistory('Отдых',parseInt(D('restMin').value)||5);endRest();beep();if(D('autoStart').checked){startWork()}else{stopAll()}}}}
         function render(){D('timerDigits').textContent=fmt(remaining);updateRing(remaining,total);if(isRest)D('catRestTime').textContent=fmt(remaining);document.title=fmt(remaining)+' — '+(isWork?'Работа':'Отдых')+' | CatTimer'}
-        function startRest(){var m=parseInt(D('restMin').value)||5;remaining=m*60;total=remaining;isWork=false;isRest=true;D('ringFill').classList.add('rest-ring');D('timerStatus').textContent='☕ Отдых';D('timerStatus').className='timer-status resting';if(D('showCat').checked){D('catTitle').textContent=catPhrases[Math.floor(Math.random()*catPhrases.length)];D('catOverlay').classList.add('visible')}render();timer=setInterval(tick,1000)}
-        function endRest(){D('catOverlay').classList.remove('visible')}
-        function stopAll(){clearInterval(timer);timer=null;isWork=false;isRest=false;remaining=0;D('ringFill').classList.remove('rest-ring');D('ringFill').style.strokeDashoffset=0;D('btnStart').disabled=false;D('btnStop').disabled=true;D('timerStatus').textContent='🐈 Готов';D('timerStatus').className='timer-status';D('timerDigits').textContent=fmt((parseInt(D('workMin').value)||25)*60);D('catOverlay').classList.remove('visible');document.title='CatTimer'}
+        function startRest(){var m=parseInt(D('restMin').value)||5;remaining=m*60;total=remaining;isWork=false;isRest=true;D('ringFill').classList.add('rest-ring');D('timerStatus').textContent='☕ Отдых';D('timerStatus').className='timer-status resting';var phrase=catPhrases[Math.floor(Math.random()*catPhrases.length)];if(D('showCat').checked){D('catTitle').textContent=phrase;D('catOverlay').classList.add('visible');if(window.catTimer){window.catTimer.showCat({phrase:phrase,remaining:remaining})}}render();timer=setInterval(tick,1000)}
+        function endRest(){D('catOverlay').classList.remove('visible');if(window.catTimer){window.catTimer.hideCat()}}
+        function stopAll(){clearInterval(timer);timer=null;isWork=false;isRest=false;remaining=0;D('ringFill').classList.remove('rest-ring');D('ringFill').style.strokeDashoffset=0;D('btnStart').disabled=false;D('btnStop').disabled=true;D('timerStatus').textContent='🐈 Готов';D('timerStatus').className='timer-status';D('timerDigits').textContent=fmt((parseInt(D('workMin').value)||25)*60);D('catOverlay').classList.remove('visible');if(window.catTimer){window.catTimer.hideCat()}document.title='CatTimer'}
         function addHistory(l,m){var n=new Date();var t=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');historyData.unshift({label:l,mins:m,time:t});renderHistory()}
         function renderHistory(){var list=D('historyList'),empty=D('historyEmpty');if(historyData.length===0){empty.style.display='block';list.innerHTML='';return}empty.style.display='none';list.innerHTML=historyData.map(function(h){var c=h.label.indexOf('Отдых')>=0?'#7ecba1':'#e88ca5';return '<li class="history-item"><div class="hi-left"><div class="hi-dot" style="background:'+c+'"></div><span class="hi-label">'+h.label+' — '+h.mins+' мин</span></div><span class="hi-time">'+h.time+'</span></li>'}).join('')}
         function switchPage(n){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});document.querySelectorAll('.sidebar-nav a').forEach(function(a){a.classList.remove('active')});D('page-'+n).classList.add('active');document.querySelector('[data-page="'+n+'"]').classList.add('active')}
@@ -211,6 +242,8 @@
         D('volumeSlider').addEventListener('input',function(){D('volumeVal').textContent=this.value+'%';this.style.setProperty('--vol-pct',this.value+'%')});
         D('workMin').addEventListener('input',function(){if(!isWork&&!isRest){D('timerDigits').textContent=fmt((parseInt(D('workMin').value)||25)*60)}});
         D('timerDigits').textContent=fmt(25*60);
+        showMotivational();updateCatMood();updateStats();
+        document.addEventListener('keydown',function(e){if(e.target.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();if(!isWork&&!isRest){startWork()}else{stopAll()}}if(e.code==='Escape'){e.preventDefault();stopAll()}});
     </script>
 </body>
 </html>
