@@ -3,695 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat Timer - Таймер с котом</title>
+    <title>CatTimer</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.8s ease;
-        }
-
-        body.work-mode {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-        }
-
-        body.rest-mode {
-            background: linear-gradient(135deg, #0d4b3c 0%, #145a32 50%, #1e8449 100%);
-        }
-
-        body.idle-mode {
-            background: linear-gradient(135deg, #2c2c54 0%, #474787 50%, #2c2c54 100%);
-        }
-
-        .container {
-            text-align: center;
-            padding: 30px;
-            max-width: 500px;
-            width: 100%;
-        }
-
-        h1 {
-            color: #fff;
-            font-size: 2rem;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        .subtitle {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.9rem;
-            margin-bottom: 30px;
-        }
-
-        .settings {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255,255,255,0.15);
-        }
-
-        .setting-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .setting-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .setting-row label {
-            color: #fff;
-            font-size: 1rem;
-            flex-shrink: 0;
-            margin-right: 15px;
-        }
-
-        .setting-row input {
-            width: 80px;
-            padding: 8px 12px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 10px;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            font-size: 1rem;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .setting-row input:focus {
-            border-color: rgba(255,255,255,0.5);
-        }
-
-        .setting-row span {
-            color: rgba(255,255,255,0.6);
-            margin-left: 8px;
-            font-size: 0.85rem;
-        }
-
-        .timer-display {
-            position: relative;
-            margin: 25px auto;
-            width: 220px;
-            height: 220px;
-        }
-
-        .timer-circle {
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .timer-circle svg.progress-ring {
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform: rotate(-90deg);
-        }
-
-        .progress-ring-bg {
-            fill: none;
-            stroke: rgba(255,255,255,0.1);
-            stroke-width: 6;
-        }
-
-        .progress-ring-fill {
-            fill: none;
-            stroke: #e74c3c;
-            stroke-width: 6;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease;
-        }
-
-        .progress-ring-fill.rest {
-            stroke: #2ecc71;
-        }
-
-        .timer-time {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #fff;
-            z-index: 1;
-            letter-spacing: 2px;
-        }
-
-        .timer-label {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.7);
-            z-index: 1;
-            margin-top: 2px;
-        }
-
-        .buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: #fff;
-        }
-
-        .btn-start:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(231,76,60,0.4);
-        }
-
-        .btn-stop {
-            background: rgba(255,255,255,0.15);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .btn-stop:hover {
-            background: rgba(255,255,255,0.25);
-            transform: translateY(-2px);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* Cat overlay */
-        .cat-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-            animation: fadeIn 0.5s ease;
-        }
-
-        .cat-overlay.visible {
-            display: flex;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .cat-popup {
-            text-align: center;
-            animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.3) translateY(50px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-
-        .cat-message {
-            background: #fff;
-            color: #333;
-            padding: 15px 30px;
-            border-radius: 20px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .cat-message::after {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-            border-top: 14px solid #fff;
-        }
-
-        .cat-rest-timer {
-            color: #e74c3c;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 15px 0;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-
-        .btn-back {
-            margin-top: 15px;
-            padding: 10px 25px;
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-back:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(46,204,113,0.4);
-        }
-
-        /* Cat SVG animation */
-        .cat-svg-wrapper {
-            display: inline-block;
-            animation: catBounce 2s ease-in-out infinite;
-        }
-
-        @keyframes catBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .cat-tail {
-            animation: tailWag 1.5s ease-in-out infinite;
-            transform-origin: 30px 140px;
-        }
-
-        @keyframes tailWag {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(15deg); }
-            75% { transform: rotate(-15deg); }
-        }
-
-        .cat-eye-left, .cat-eye-right {
-            animation: blink 3s ease-in-out infinite;
-        }
-
-        @keyframes blink {
-            0%, 90%, 100% { transform: scaleY(1); }
-            95% { transform: scaleY(0.1); }
-        }
-
-        .cat-eye-left {
-            transform-origin: 95px 68px;
-        }
-
-        .cat-eye-right {
-            transform-origin: 135px 68px;
-        }
-
-        .cat-paw-left {
-            animation: pawWave 1.2s ease-in-out infinite;
-            transform-origin: 80px 130px;
-        }
-
-        @keyframes pawWave {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-15deg); }
-        }
-
-        /* Cycle counter */
-        .cycle-info {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.85rem;
-            margin-top: 15px;
-        }
-
-        /* Sound toggle */
-        .sound-toggle {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #fff;
-            font-size: 1.2rem;
-            transition: background 0.3s;
-        }
-
-        .sound-toggle:hover {
-            background: rgba(255,255,255,0.25);
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f0ee; color: #333; height: 100vh; overflow: hidden; display: flex; }
+        .sidebar { width: 180px; min-width: 180px; background: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; padding: 20px 0; height: 100vh; }
+        .sidebar-logo { padding: 0 20px 25px; display: flex; align-items: center; gap: 8px; }
+        .logo-text { font-size: 1.6rem; font-weight: 700; color: #e88ca5; font-style: italic; text-shadow: 1px 1px 0 #f5c6d0; }
+        .sidebar-nav { list-style: none; flex: 1; }
+        .sidebar-nav li { position: relative; }
+        .sidebar-nav a { display: flex; align-items: center; gap: 10px; padding: 12px 20px; text-decoration: none; color: #888; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+        .sidebar-nav a:hover { color: #555; background: #fdf5f7; }
+        .sidebar-nav a.active { color: #e07a94; background: #fdf0f3; }
+        .sidebar-nav a.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background: #e88ca5; border-radius: 0 3px 3px 0; }
+        .sidebar-nav .nav-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .sidebar-cat { padding: 15px 20px; text-align: center; }
+        .sidebar-cat svg { opacity: 0.4; transition: opacity 0.3s; }
+        .sidebar-cat:hover svg { opacity: 0.7; }
+        .main { flex: 1; overflow-y: auto; padding: 25px 30px; height: 100vh; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .section-title { font-size: 0.75rem; font-weight: 600; color: #e07a94; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; margin-top: 20px; }
+        .section-title:first-child { margin-top: 0; }
+        .card { background: #fff; border-radius: 12px; padding: 16px 20px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s; }
+        .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        .card-label { font-size: 0.95rem; font-weight: 500; color: #444; display: flex; align-items: center; gap: 6px; }
+        .card-label .info-icon { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid #ccc; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; color: #bbb; cursor: help; }
+        .num-input-wrap { display: flex; align-items: center; gap: 8px; }
+        .num-input { width: 100px; padding: 8px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; background: #f9f9f9; color: #333; font-size: 0.9rem; text-align: center; outline: none; font-family: inherit; transition: border-color 0.2s, background 0.2s; }
+        .num-input:focus { border-color: #e88ca5; background: #fff; }
+        .num-unit { font-size: 0.8rem; color: #999; }
+        .toggle { position: relative; width: 46px; height: 26px; cursor: pointer; }
+        .toggle input { display: none; }
+        .toggle-slider { position: absolute; inset: 0; background: #ddd; border-radius: 13px; transition: background 0.3s; }
+        .toggle-slider::after { content: ''; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .toggle input:checked + .toggle-slider { background: linear-gradient(135deg, #f0a3b8, #e88ca5); }
+        .toggle input:checked + .toggle-slider::after { transform: translateX(20px); }
+        .timer-area { text-align: center; padding: 20px 0; }
+        .timer-ring-wrap { position: relative; width: 200px; height: 200px; margin: 0 auto 15px; }
+        .timer-ring-wrap svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+        .ring-bg { fill: none; stroke: #f0e8e5; stroke-width: 7; }
+        .ring-fill { fill: none; stroke: #e88ca5; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease, stroke 0.5s ease; }
+        .ring-fill.rest-ring { stroke: #7ecba1; }
+        .timer-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .timer-digits { font-size: 2.8rem; font-weight: 700; color: #333; letter-spacing: 1px; line-height: 1; }
+        .timer-status { font-size: 0.85rem; color: #aaa; margin-top: 6px; font-weight: 500; }
+        .timer-status.working { color: #e88ca5; }
+        .timer-status.resting { color: #7ecba1; }
+        .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        .btn { padding: 10px 28px; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.25s; font-family: inherit; }
+        .btn-primary { background: linear-gradient(135deg, #f0a3b8, #e07a94); color: #fff; box-shadow: 0 3px 12px rgba(224,122,148,0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(224,122,148,0.4); }
+        .btn-secondary { background: #f5f0ee; color: #888; border: 1.5px solid #e5e0de; }
+        .btn-secondary:hover { background: #ece6e3; color: #666; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        .cycle-count { margin-top: 12px; font-size: 0.8rem; color: #bbb; }
+        .cat-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(6px); }
+        .cat-overlay.visible { display: flex; }
+        .cat-popup { background: #fff; border-radius: 20px; padding: 30px 40px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: popUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); max-width: 400px; }
+        @keyframes popUp { 0% { transform: scale(0.5) translateY(30px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .cat-popup-title { font-size: 1.3rem; font-weight: 700; color: #e07a94; margin-bottom: 10px; }
+        .cat-popup-msg { font-size: 0.95rem; color: #888; margin-bottom: 15px; }
+        .cat-svg-wrap { display: inline-block; animation: catFloat 2.5s ease-in-out infinite; }
+        @keyframes catFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .cat-rest-time { font-size: 2.2rem; font-weight: 700; color: #333; margin: 12px 0; }
+        .btn-skip { padding: 10px 24px; background: linear-gradient(135deg, #7ecba1, #5bb88a); color: #fff; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.25s; font-family: inherit; box-shadow: 0 3px 12px rgba(94,184,138,0.3); }
+        .btn-skip:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(94,184,138,0.4); }
+        .cat-tail-anim { animation: tailSwing 1.5s ease-in-out infinite; transform-origin: 30px 140px; }
+        @keyframes tailSwing { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(12deg); } 75% { transform: rotate(-12deg); } }
+        .cat-blink-l, .cat-blink-r { animation: eyeBlink 3.5s ease-in-out infinite; }
+        .cat-blink-l { transform-origin: 95px 68px; }
+        .cat-blink-r { transform-origin: 135px 68px; }
+        @keyframes eyeBlink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+        .cat-wave { animation: wave 1.2s ease-in-out infinite; transform-origin: 80px 130px; }
+        @keyframes wave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-12deg); } }
+        .volume-wrap { display: flex; align-items: center; gap: 10px; }
+        .volume-slider { -webkit-appearance: none; appearance: none; width: 100px; height: 6px; border-radius: 3px; background: linear-gradient(to right, #e88ca5 var(--vol-pct, 100%), #eee var(--vol-pct, 100%)); outline: none; cursor: pointer; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #e88ca5; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+        .volume-val { font-size: 0.8rem; color: #999; min-width: 35px; text-align: right; }
+        .about-content { text-align: center; padding: 30px 0; }
+        .about-content .about-cat { margin-bottom: 15px; }
+        .about-content h2 { font-size: 1.5rem; color: #e07a94; font-style: italic; margin-bottom: 6px; }
+        .about-content p { color: #999; font-size: 0.85rem; line-height: 1.6; }
+        .about-content .version { margin-top: 15px; font-size: 0.75rem; color: #ccc; }
+        .history-empty { text-align: center; padding: 40px 0; color: #ccc; }
+        .history-empty .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .history-list { list-style: none; }
+        .history-item { background: #fff; border-radius: 12px; padding: 14px 18px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .history-item .hi-left { display: flex; align-items: center; gap: 10px; }
+        .history-item .hi-dot { width: 8px; height: 8px; border-radius: 50%; background: #e88ca5; }
+        .history-item .hi-label { font-size: 0.9rem; color: #555; font-weight: 500; }
+        .history-item .hi-time { font-size: 0.8rem; color: #bbb; }
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-track { background: transparent; }
+        .main::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
     </style>
 </head>
-<body class="idle-mode">
-
-    <div class="sound-toggle" id="soundToggle" title="Sound On/Off">&#128264;</div>
-
-    <div class="container">
-        <h1>&#128008; Cat Timer</h1>
-        <p class="subtitle">Таймер работы и отдыха с котиком</p>
-
-        <div class="settings" id="settings">
-            <div class="setting-row">
-                <label>&#9200; Работа:</label>
-                <div>
-                    <input type="number" id="workMinutes" value="25" min="1" max="180">
-                    <span>мин</span>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="16" r="10" fill="#f5c6d0"/><polygon points="6,10 4,2 11,8" fill="#f5c6d0"/><polygon points="22,10 24,2 17,8" fill="#f5c6d0"/><circle cx="10" cy="14" r="1.5" fill="#333"/><circle cx="18" cy="14" r="1.5" fill="#333"/><ellipse cx="14" cy="17" rx="1.2" ry="0.8" fill="#e88ca5"/></svg>
+            <span class="logo-text">CatTimer</span>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a class="active" data-page="timer" onclick="switchPage('timer')"><span class="nav-icon">&#9200;</span><span>Таймер</span></a></li>
+            <li><a data-page="settings" onclick="switchPage('settings')"><span class="nav-icon">&#9881;</span><span>Настройки</span></a></li>
+            <li><a data-page="history" onclick="switchPage('history')"><span class="nav-icon">&#128203;</span><span>История</span></a></li>
+            <li><a data-page="about" onclick="switchPage('about')"><span class="nav-icon">&#9432;</span><span>О программе</span></a></li>
+        </ul>
+        <div class="sidebar-cat">
+            <svg width="50" height="50" viewBox="0 0 50 50"><ellipse cx="25" cy="35" rx="14" ry="10" fill="#ddd"/><circle cx="25" cy="22" r="10" fill="#ddd"/><polygon points="17,16 15,8 21,14" fill="#ddd"/><polygon points="33,16 35,8 29,14" fill="#ddd"/><circle cx="22" cy="21" r="1.2" fill="#bbb"/><circle cx="28" cy="21" r="1.2" fill="#bbb"/></svg>
+        </div>
+    </aside>
+    <main class="main">
+        <div class="page active" id="page-timer">
+            <div class="section-title">Таймер</div>
+            <div class="timer-area">
+                <div class="timer-ring-wrap">
+                    <svg width="200" height="200"><circle class="ring-bg" cx="100" cy="100" r="90"/><circle class="ring-fill" id="ringFill" cx="100" cy="100" r="90" stroke-dasharray="565.487" stroke-dashoffset="0"/></svg>
+                    <div class="timer-inner">
+                        <div class="timer-digits" id="timerDigits">25:00</div>
+                        <div class="timer-status" id="timerStatus">&#128008; Готов</div>
+                    </div>
                 </div>
-            </div>
-            <div class="setting-row">
-                <label>&#9749; Отдых:</label>
-                <div>
-                    <input type="number" id="restMinutes" value="5" min="1" max="60">
-                    <span>мин</span>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="btnStart">&#9654; Старт</button>
+                    <button class="btn btn-secondary" id="btnStop" disabled>&#9632; Стоп</button>
                 </div>
+                <div class="cycle-count" id="cycleCount"></div>
             </div>
         </div>
-
-        <div class="timer-display">
-            <div class="timer-circle">
-                <svg class="progress-ring" width="220" height="220">
-                    <circle class="progress-ring-bg" cx="110" cy="110" r="100"/>
-                    <circle class="progress-ring-fill" id="progressRing" cx="110" cy="110" r="100"
-                        stroke-dasharray="628.318" stroke-dashoffset="0"/>
-                </svg>
-                <span class="timer-time" id="timerTime">25:00</span>
-                <span class="timer-label" id="timerLabel">Готов к работе</span>
+        <div class="page" id="page-settings">
+            <div class="section-title">Время</div>
+            <div class="card"><span class="card-label">Время работы <span class="info-icon">?</span></span><div class="num-input-wrap"><input type="number" class="num-input" id="workMin" value="25" min="1" max="180"><span class="num-unit">мин</span></div></div>
+            <div class="card"><span class="card-label">Время отдыха <span class="info-icon">?</span></span><div class="num-input-wrap"><input type="number" class="num-input" id="restMin" value="5" min="1" max="60"><span class="num-unit">мин</span></div></div>
+            <div class="section-title">Поведение</div>
+            <div class="card"><span class="card-label">Автоматический старт <span class="info-icon">?</span></span><label class="toggle"><input type="checkbox" id="autoStart" checked><span class="toggle-slider"></span></label></div>
+            <div class="card"><span class="card-label">Показывать котика <span class="info-icon">?</span></span><label class="toggle"><input type="checkbox" id="showCat" checked><span class="toggle-slider"></span></label></div>
+            <div class="section-title">Звук</div>
+            <div class="card"><span class="card-label">Звуковое уведомление</span><label class="toggle"><input type="checkbox" id="soundOn" checked><span class="toggle-slider"></span></label></div>
+            <div class="card"><span class="card-label">Громкость</span><div class="volume-wrap"><input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100"><span class="volume-val" id="volumeVal">100%</span></div></div>
+        </div>
+        <div class="page" id="page-history">
+            <div class="section-title">История сессий</div>
+            <ul class="history-list" id="historyList"></ul>
+            <div class="history-empty" id="historyEmpty"><div class="empty-icon">&#128008;</div><div>Пока нет завершённых сессий</div></div>
+        </div>
+        <div class="page" id="page-about">
+            <div class="about-content">
+                <div class="about-cat">
+                    <svg width="120" height="120" viewBox="0 0 220 200"><ellipse cx="110" cy="140" rx="55" ry="45" fill="#f5c6d0"/><ellipse cx="110" cy="145" rx="45" ry="30" fill="#fde8ed"/><path d="M45 140 Q20 100 35 75 Q40 68 45 75 Q55 100 60 130" fill="#f5c6d0"/><ellipse cx="80" cy="165" rx="15" ry="10" fill="#f5c6d0"/><ellipse cx="140" cy="165" rx="15" ry="10" fill="#f5c6d0"/><circle cx="110" cy="75" r="42" fill="#f5c6d0"/><polygon points="75,50 68,15 95,42" fill="#f5c6d0"/><polygon points="78,45 73,22 92,42" fill="#fde8ed"/><polygon points="145,50 152,15 125,42" fill="#f5c6d0"/><polygon points="142,45 147,22 128,42" fill="#fde8ed"/><ellipse cx="95" cy="68" rx="8" ry="9" fill="#fff"/><ellipse cx="97" cy="69" rx="5" ry="6" fill="#3a3a3a"/><ellipse cx="98" cy="67" rx="2" ry="2.5" fill="#fff"/><ellipse cx="125" cy="68" rx="8" ry="9" fill="#fff"/><ellipse cx="127" cy="69" rx="5" ry="6" fill="#3a3a3a"/><ellipse cx="128" cy="67" rx="2" ry="2.5" fill="#fff"/><polygon points="110,80 106,76 114,76" fill="#e88ca5"/><path d="M106 82 Q110 88 114 82" fill="none" stroke="#c9886e" stroke-width="1.5"/><path d="M110 80 L110 82" fill="none" stroke="#c9886e" stroke-width="1.5"/><circle cx="82" cy="82" r="7" fill="#f5c6d0" opacity="0.6"/><circle cx="138" cy="82" r="7" fill="#f5c6d0" opacity="0.6"/></svg>
+                </div>
+                <h2>CatTimer</h2>
+                <p>Таймер работы и отдыха с милым котиком.<br>Следи за своим временем и не забывай отдыхать!</p>
+                <p class="version">v1.0.0</p>
             </div>
         </div>
-
-        <div class="buttons">
-            <button class="btn btn-start" id="btnStart">&#9654; Старт</button>
-            <button class="btn btn-stop" id="btnStop" disabled>&#9632; Стоп</button>
-        </div>
-
-        <div class="cycle-info" id="cycleInfo"></div>
-    </div>
-
-    <!-- Cat popup overlay -->
+    </main>
     <div class="cat-overlay" id="catOverlay">
         <div class="cat-popup">
-            <div class="cat-message" id="catMessage">Мяу! Пора отдохнуть! &#128564;</div>
-            <div class="cat-svg-wrapper">
-                <svg width="220" height="220" viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Body -->
-                    <ellipse cx="110" cy="140" rx="55" ry="45" fill="#F4A460"/>
-                    <ellipse cx="110" cy="145" rx="45" ry="30" fill="#FFDAB9"/>
-
-                    <!-- Tail -->
-                    <path class="cat-tail" d="M45 140 Q20 100 35 75 Q40 68 45 75 Q55 100 60 130" fill="#F4A460" stroke="#D2883E" stroke-width="1"/>
-
-                    <!-- Left paw -->
-                    <g class="cat-paw-left">
-                        <ellipse cx="80" cy="165" rx="15" ry="10" fill="#F4A460"/>
-                        <ellipse cx="72" cy="162" rx="5" ry="4" fill="#FFDAB9"/>
-                        <ellipse cx="80" cy="160" rx="5" ry="4" fill="#FFDAB9"/>
-                        <ellipse cx="88" cy="162" rx="5" ry="4" fill="#FFDAB9"/>
-                    </g>
-
-                    <!-- Right paw -->
-                    <ellipse cx="140" cy="165" rx="15" ry="10" fill="#F4A460"/>
-                    <ellipse cx="132" cy="162" rx="5" ry="4" fill="#FFDAB9"/>
-                    <ellipse cx="140" cy="160" rx="5" ry="4" fill="#FFDAB9"/>
-                    <ellipse cx="148" cy="162" rx="5" ry="4" fill="#FFDAB9"/>
-
-                    <!-- Head -->
-                    <circle cx="110" cy="75" r="42" fill="#F4A460"/>
-                    <circle cx="110" cy="80" r="32" fill="#FFDAB9" opacity="0.5"/>
-
-                    <!-- Ears -->
-                    <polygon points="75,50 68,15 95,42" fill="#F4A460" stroke="#D2883E" stroke-width="1"/>
-                    <polygon points="78,45 73,22 92,42" fill="#FFB6C1"/>
-                    <polygon points="145,50 152,15 125,42" fill="#F4A460" stroke="#D2883E" stroke-width="1"/>
-                    <polygon points="142,45 147,22 128,42" fill="#FFB6C1"/>
-
-                    <!-- Eyes -->
-                    <g class="cat-eye-left">
-                        <ellipse cx="95" cy="68" rx="8" ry="9" fill="#fff"/>
-                        <ellipse cx="97" cy="69" rx="5" ry="6" fill="#3a3a3a"/>
-                        <ellipse cx="98" cy="67" rx="2" ry="2.5" fill="#fff"/>
-                    </g>
-                    <g class="cat-eye-right">
-                        <ellipse cx="125" cy="68" rx="8" ry="9" fill="#fff"/>
-                        <ellipse cx="127" cy="69" rx="5" ry="6" fill="#3a3a3a"/>
-                        <ellipse cx="128" cy="67" rx="2" ry="2.5" fill="#fff"/>
-                    </g>
-
-                    <!-- Nose -->
+            <div class="cat-popup-title" id="catTitle">Мяу! Пора отдохнуть!</div>
+            <div class="cat-popup-msg">Сделай перерыв, потянись как котик ~</div>
+            <div class="cat-svg-wrap">
+                <svg width="180" height="180" viewBox="0 0 220 200">
+                    <ellipse cx="110" cy="140" rx="55" ry="45" fill="#F4A460"/><ellipse cx="110" cy="145" rx="45" ry="30" fill="#FFDAB9"/>
+                    <path class="cat-tail-anim" d="M45 140 Q20 100 35 75 Q40 68 45 75 Q55 100 60 130" fill="#F4A460" stroke="#D2883E" stroke-width="1"/>
+                    <g class="cat-wave"><ellipse cx="80" cy="165" rx="15" ry="10" fill="#F4A460"/><ellipse cx="72" cy="162" rx="5" ry="4" fill="#FFDAB9"/><ellipse cx="80" cy="160" rx="5" ry="4" fill="#FFDAB9"/><ellipse cx="88" cy="162" rx="5" ry="4" fill="#FFDAB9"/></g>
+                    <ellipse cx="140" cy="165" rx="15" ry="10" fill="#F4A460"/><ellipse cx="132" cy="162" rx="5" ry="4" fill="#FFDAB9"/><ellipse cx="140" cy="160" rx="5" ry="4" fill="#FFDAB9"/><ellipse cx="148" cy="162" rx="5" ry="4" fill="#FFDAB9"/>
+                    <circle cx="110" cy="75" r="42" fill="#F4A460"/><circle cx="110" cy="80" r="32" fill="#FFDAB9" opacity="0.5"/>
+                    <polygon points="75,50 68,15 95,42" fill="#F4A460" stroke="#D2883E" stroke-width="1"/><polygon points="78,45 73,22 92,42" fill="#FFB6C1"/>
+                    <polygon points="145,50 152,15 125,42" fill="#F4A460" stroke="#D2883E" stroke-width="1"/><polygon points="142,45 147,22 128,42" fill="#FFB6C1"/>
+                    <g class="cat-blink-l"><ellipse cx="95" cy="68" rx="8" ry="9" fill="#fff"/><ellipse cx="97" cy="69" rx="5" ry="6" fill="#3a3a3a"/><ellipse cx="98" cy="67" rx="2" ry="2.5" fill="#fff"/></g>
+                    <g class="cat-blink-r"><ellipse cx="125" cy="68" rx="8" ry="9" fill="#fff"/><ellipse cx="127" cy="69" rx="5" ry="6" fill="#3a3a3a"/><ellipse cx="128" cy="67" rx="2" ry="2.5" fill="#fff"/></g>
                     <polygon points="110,80 106,76 114,76" fill="#FF6B6B"/>
-
-                    <!-- Mouth -->
-                    <path d="M106 82 Q110 88 114 82" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round"/>
-                    <path d="M110 80 L110 82" fill="none" stroke="#8B4513" stroke-width="1.5"/>
-
-                    <!-- Whiskers -->
-                    <line x1="60" y1="73" x2="88" y2="78" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
-                    <line x1="58" y1="80" x2="88" y2="82" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
-                    <line x1="62" y1="87" x2="88" y2="85" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
-                    <line x1="160" y1="73" x2="132" y2="78" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
-                    <line x1="162" y1="80" x2="132" y2="82" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
-                    <line x1="158" y1="87" x2="132" y2="85" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
-
-                    <!-- Blush -->
-                    <circle cx="82" cy="82" r="7" fill="#FFB6C1" opacity="0.4"/>
-                    <circle cx="138" cy="82" r="7" fill="#FFB6C1" opacity="0.4"/>
-
-                    <!-- Stripes on forehead -->
-                    <path d="M100 52 L103 42" stroke="#D2883E" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M110 50 L110 40" stroke="#D2883E" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M120 52 L117 42" stroke="#D2883E" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M106 82 Q110 88 114 82" fill="none" stroke="#8B4513" stroke-width="1.5" stroke-linecap="round"/><path d="M110 80 L110 82" fill="none" stroke="#8B4513" stroke-width="1.5"/>
+                    <line x1="60" y1="73" x2="88" y2="78" stroke="#8B4513" stroke-width="1" opacity="0.6"/><line x1="58" y1="80" x2="88" y2="82" stroke="#8B4513" stroke-width="1" opacity="0.6"/><line x1="62" y1="87" x2="88" y2="85" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
+                    <line x1="160" y1="73" x2="132" y2="78" stroke="#8B4513" stroke-width="1" opacity="0.6"/><line x1="162" y1="80" x2="132" y2="82" stroke="#8B4513" stroke-width="1" opacity="0.6"/><line x1="158" y1="87" x2="132" y2="85" stroke="#8B4513" stroke-width="1" opacity="0.6"/>
+                    <circle cx="82" cy="82" r="7" fill="#FFB6C1" opacity="0.4"/><circle cx="138" cy="82" r="7" fill="#FFB6C1" opacity="0.4"/>
+                    <path d="M100 52 L103 42" stroke="#D2883E" stroke-width="2" stroke-linecap="round"/><path d="M110 50 L110 40" stroke="#D2883E" stroke-width="2" stroke-linecap="round"/><path d="M120 52 L117 42" stroke="#D2883E" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </div>
-            <div class="cat-rest-timer" id="catRestTimer">5:00</div>
-            <button class="btn-back" id="btnSkipRest">&#128170; Вернуться к работе</button>
+            <div class="cat-rest-time" id="catRestTime">5:00</div>
+            <button class="btn-skip" id="btnSkip">&#128170; Вернуться к работе</button>
         </div>
     </div>
-
     <script>
-        const workInput = document.getElementById('workMinutes');
-        const restInput = document.getElementById('restMinutes');
-        const timerTime = document.getElementById('timerTime');
-        const timerLabel = document.getElementById('timerLabel');
-        const btnStart = document.getElementById('btnStart');
-        const btnStop = document.getElementById('btnStop');
-        const catOverlay = document.getElementById('catOverlay');
-        const catRestTimer = document.getElementById('catRestTimer');
-        const catMessage = document.getElementById('catMessage');
-        const btnSkipRest = document.getElementById('btnSkipRest');
-        const progressRing = document.getElementById('progressRing');
-        const settings = document.getElementById('settings');
-        const cycleInfo = document.getElementById('cycleInfo');
-        const soundToggle = document.getElementById('soundToggle');
-
-        const CIRCUMFERENCE = 2 * Math.PI * 100;
-        progressRing.style.strokeDasharray = CIRCUMFERENCE;
-
-        let timer = null;
-        let remainingSeconds = 0;
-        let totalSeconds = 0;
-        let isWorking = false;
-        let isResting = false;
-        let cycleCount = 0;
-        let soundEnabled = true;
-
-        const catMessages = [
-            'Мяу! Пора отдохнуть! \uD83D\uDE3A',
-            'Мррр~ Отдохни немного! \uD83D\uDCA4',
-            'Эй! Глазки устали! \uD83D\uDE3B',
-            'Потянись как котик! \uD83D\uDE38',
-            'Время для перерыва! \uD83C\uDF1F',
-            'Мяу! Хватит работать! \uD83D\uDE3C',
-            'Котик говорит: отдых! \u2615',
-            'Муррр, сделай паузу! \uD83D\uDE3A',
-        ];
-
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            return `${m}:${s.toString().padStart(2, '0')}`;
-        }
-
-        function updateProgress(remaining, total) {
-            const fraction = remaining / total;
-            const offset = CIRCUMFERENCE * (1 - fraction);
-            progressRing.style.strokeDashoffset = offset;
-        }
-
-        function playBeep() {
-            if (!soundEnabled) return;
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.value = 800;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.5);
-
-                setTimeout(() => {
-                    const osc2 = ctx.createOscillator();
-                    const gain2 = ctx.createGain();
-                    osc2.connect(gain2);
-                    gain2.connect(ctx.destination);
-                    osc2.frequency.value = 1000;
-                    osc2.type = 'sine';
-                    gain2.gain.setValueAtTime(0.3, ctx.currentTime);
-                    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                    osc2.start(ctx.currentTime);
-                    osc2.stop(ctx.currentTime + 0.5);
-                }, 200);
-            } catch (e) {}
-        }
-
-        function startWork() {
-            const workMin = parseInt(workInput.value) || 25;
-            remainingSeconds = workMin * 60;
-            totalSeconds = remainingSeconds;
-            isWorking = true;
-            isResting = false;
-
-            document.body.className = 'work-mode';
-            progressRing.classList.remove('rest');
-            settings.style.opacity = '0.5';
-            settings.style.pointerEvents = 'none';
-            btnStart.disabled = true;
-            btnStop.disabled = false;
-            timerLabel.textContent = '\uD83D\uDCBB \u0420\u0430\u0431\u043E\u0442\u0430';
-
-            updateDisplay();
-            timer = setInterval(tick, 1000);
-        }
-
-        function tick() {
-            remainingSeconds--;
-            updateDisplay();
-
-            if (remainingSeconds <= 0) {
-                clearInterval(timer);
-                timer = null;
-
-                if (isWorking) {
-                    cycleCount++;
-                    updateCycleInfo();
-                    playBeep();
-                    startRest();
-                } else if (isResting) {
-                    endRest();
-                    playBeep();
-                    startWork();
-                }
-            }
-        }
-
-        function updateDisplay() {
-            timerTime.textContent = formatTime(remainingSeconds);
-            updateProgress(remainingSeconds, totalSeconds);
-
-            if (isResting) {
-                catRestTimer.textContent = formatTime(remainingSeconds);
-            }
-
-            document.title = `${formatTime(remainingSeconds)} - ${isWorking ? '\u0420\u0430\u0431\u043E\u0442\u0430' : '\u041E\u0442\u0434\u044B\u0445'} | Cat Timer`;
-        }
-
-        function startRest() {
-            const restMin = parseInt(restInput.value) || 5;
-            remainingSeconds = restMin * 60;
-            totalSeconds = remainingSeconds;
-            isWorking = false;
-            isResting = true;
-
-            document.body.className = 'rest-mode';
-            progressRing.classList.add('rest');
-            timerLabel.textContent = '\u2615 \u041E\u0442\u0434\u044B\u0445';
-
-            catMessage.textContent = catMessages[Math.floor(Math.random() * catMessages.length)];
-            catOverlay.classList.add('visible');
-
-            updateDisplay();
-            timer = setInterval(tick, 1000);
-        }
-
-        function endRest() {
-            catOverlay.classList.remove('visible');
-        }
-
-        function stopTimer() {
-            clearInterval(timer);
-            timer = null;
-            isWorking = false;
-            isResting = false;
-            remainingSeconds = 0;
-
-            document.body.className = 'idle-mode';
-            progressRing.classList.remove('rest');
-            progressRing.style.strokeDashoffset = 0;
-            settings.style.opacity = '1';
-            settings.style.pointerEvents = 'auto';
-            btnStart.disabled = false;
-            btnStop.disabled = true;
-            timerLabel.textContent = '\u0413\u043E\u0442\u043E\u0432 \u043A \u0440\u0430\u0431\u043E\u0442\u0435';
-            timerTime.textContent = formatTime(parseInt(workInput.value || 25) * 60);
-            catOverlay.classList.remove('visible');
-            document.title = 'Cat Timer - \u0422\u0430\u0439\u043C\u0435\u0440 \u0441 \u043A\u043E\u0442\u043E\u043C';
-        }
-
-        function updateCycleInfo() {
-            cycleInfo.textContent = `\u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u043E \u0446\u0438\u043A\u043B\u043E\u0432: ${cycleCount}`;
-        }
-
-        btnStart.addEventListener('click', startWork);
-        btnStop.addEventListener('click', stopTimer);
-        btnSkipRest.addEventListener('click', () => {
-            clearInterval(timer);
-            timer = null;
-            endRest();
-            startWork();
-        });
-
-        soundToggle.addEventListener('click', () => {
-            soundEnabled = !soundEnabled;
-            soundToggle.textContent = soundEnabled ? '\uD83D\uDD08' : '\uD83D\uDD07';
-            soundToggle.title = soundEnabled ? 'Sound On' : 'Sound Off';
-        });
-
-        workInput.addEventListener('input', () => {
-            if (!isWorking && !isResting) {
-                timerTime.textContent = formatTime((parseInt(workInput.value) || 25) * 60);
-            }
-        });
-
-        timerTime.textContent = formatTime(parseInt(workInput.value || 25) * 60);
+        var D=function(id){return document.getElementById(id)};
+        var CIRC=2*Math.PI*90;D('ringFill').style.strokeDasharray=CIRC;
+        var timer=null,remaining=0,total=0,isWork=false,isRest=false,cycles=0,historyData=[];
+        var catPhrases=['Мяу! Пора отдохнуть!','Мррр~ Отдохни немного!','Эй! Глазки устали!','Потянись как котик!','Время для перерыва!','Котик говорит: отдых!','Муррр, сделай паузу!','Мяу! Хватит работать!'];
+        function fmt(s){var m=Math.floor(s/60);var ss=s%60;return m+':'+String(ss).padStart(2,'0')}
+        function updateRing(r,t){D('ringFill').style.strokeDashoffset=CIRC*(1-r/t)}
+        function beep(){if(!D('soundOn').checked)return;var v=parseInt(D('volumeSlider').value)/100;try{var c=new(window.AudioContext||window.webkitAudioContext)();var g=c.createGain();g.connect(c.destination);g.gain.setValueAtTime(0.3*v,c.currentTime);g.gain.exponentialRampToValueAtTime(0.01,c.currentTime+0.4);var o=c.createOscillator();o.connect(g);o.frequency.value=800;o.type='sine';o.start();o.stop(c.currentTime+0.4);setTimeout(function(){var g2=c.createGain();g2.connect(c.destination);g2.gain.setValueAtTime(0.3*v,c.currentTime);g2.gain.exponentialRampToValueAtTime(0.01,c.currentTime+0.4);var o2=c.createOscillator();o2.connect(g2);o2.frequency.value=1000;o2.type='sine';o2.start();o2.stop(c.currentTime+0.4)},180)}catch(e){}}
+        function startWork(){var m=parseInt(D('workMin').value)||25;remaining=m*60;total=remaining;isWork=true;isRest=false;D('ringFill').classList.remove('rest-ring');D('btnStart').disabled=true;D('btnStop').disabled=false;D('timerStatus').textContent='💻 Работа';D('timerStatus').className='timer-status working';render();timer=setInterval(tick,1000)}
+        function tick(){remaining--;render();if(remaining<=0){clearInterval(timer);timer=null;if(isWork){cycles++;addHistory('Рабочая сессия',parseInt(D('workMin').value)||25);D('cycleCount').textContent='Завершено циклов: '+cycles;beep();startRest()}else if(isRest){addHistory('Отдых',parseInt(D('restMin').value)||5);endRest();beep();if(D('autoStart').checked){startWork()}else{stopAll()}}}}
+        function render(){D('timerDigits').textContent=fmt(remaining);updateRing(remaining,total);if(isRest)D('catRestTime').textContent=fmt(remaining);document.title=fmt(remaining)+' — '+(isWork?'Работа':'Отдых')+' | CatTimer'}
+        function startRest(){var m=parseInt(D('restMin').value)||5;remaining=m*60;total=remaining;isWork=false;isRest=true;D('ringFill').classList.add('rest-ring');D('timerStatus').textContent='☕ Отдых';D('timerStatus').className='timer-status resting';if(D('showCat').checked){D('catTitle').textContent=catPhrases[Math.floor(Math.random()*catPhrases.length)];D('catOverlay').classList.add('visible')}render();timer=setInterval(tick,1000)}
+        function endRest(){D('catOverlay').classList.remove('visible')}
+        function stopAll(){clearInterval(timer);timer=null;isWork=false;isRest=false;remaining=0;D('ringFill').classList.remove('rest-ring');D('ringFill').style.strokeDashoffset=0;D('btnStart').disabled=false;D('btnStop').disabled=true;D('timerStatus').textContent='🐈 Готов';D('timerStatus').className='timer-status';D('timerDigits').textContent=fmt((parseInt(D('workMin').value)||25)*60);D('catOverlay').classList.remove('visible');document.title='CatTimer'}
+        function addHistory(l,m){var n=new Date();var t=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');historyData.unshift({label:l,mins:m,time:t});renderHistory()}
+        function renderHistory(){var list=D('historyList'),empty=D('historyEmpty');if(historyData.length===0){empty.style.display='block';list.innerHTML='';return}empty.style.display='none';list.innerHTML=historyData.map(function(h){var c=h.label.indexOf('Отдых')>=0?'#7ecba1':'#e88ca5';return '<li class="history-item"><div class="hi-left"><div class="hi-dot" style="background:'+c+'"></div><span class="hi-label">'+h.label+' — '+h.mins+' мин</span></div><span class="hi-time">'+h.time+'</span></li>'}).join('')}
+        function switchPage(n){document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});document.querySelectorAll('.sidebar-nav a').forEach(function(a){a.classList.remove('active')});D('page-'+n).classList.add('active');document.querySelector('[data-page="'+n+'"]').classList.add('active')}
+        D('btnStart').addEventListener('click',startWork);
+        D('btnStop').addEventListener('click',stopAll);
+        D('btnSkip').addEventListener('click',function(){clearInterval(timer);timer=null;endRest();startWork()});
+        D('volumeSlider').addEventListener('input',function(){D('volumeVal').textContent=this.value+'%';this.style.setProperty('--vol-pct',this.value+'%')});
+        D('workMin').addEventListener('input',function(){if(!isWork&&!isRest){D('timerDigits').textContent=fmt((parseInt(D('workMin').value)||25)*60)}});
+        D('timerDigits').textContent=fmt(25*60);
     </script>
 </body>
 </html>
